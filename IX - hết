@@ -1,28 +1,28 @@
 #### IX. Tính tiện dụng
 ###### Tối đa hóa sự vững chắc với khởi động nhanh và tắt  1 cách thanh nhã
-Các tiến trình của ứng dụng theo 12 chuẩn phải tiện dụng,có nghĩa là chúng có thể được bắt đầu hoặc dừng lại tại thông báo của thời điểm đó. Điều này tạo điều kiện cho quy mô đàn hồi nhanh, triển khai nhanh chóng các thay đổi về mã hoặc cấu hình và tính linh hoạt của triển khai sản phẩm.
+Các tiến trình của ứng dụng theo 12 chuẩn phải tiện dụng,có nghĩa là chúng có thể được bắt đầu hoặc dừng lại tại thông báo của thời điểm đó. Điều này tạo điều kiện cho elastic scaling (mở rộng một cách linh động), triển khai nhanh chóng các thay đổi về mã hoặc cấu hình và tính linh hoạt của triển khai sản phẩm.
 
-Quy trình nên cố gắng giảm thiểu thời gian khởi động. Lý tưởng là 1 tiến trình  mất 1 vài giây từ lúc lệnh gọi được thực thi cho tới khi tiến trình bắt đầu và sẵn sàng để nhận các yêu cầu từ công việc. Thời gian khởi động ngắn cho phép các tiển trình triển khai và mở rộng nhanh hơn, và nó chắc chắn hơn, bởi vì người quản lý quy trình có thể dễ dàng di chuyển các quy trình đến các máy vật lý mới khi được bảo hành.
+Quy trình nên cố gắng giảm thiểu thời gian khởi động. Lý tưởng là 1 tiến trình  mất 1 vài giây từ lúc lệnh gọi được thực thi cho tới khi tiến trình bắt đầu và sẵn sàng để nhận các yêu cầu từ công việc. Thời gian khởi động ngắn cho phép các tiến trình triển khai và mở rộng nhanh hơn, và nó chắc chắn hơn, bởi vì người quản lý quy trình có thể dễ dàng di chuyển các quy trình đến các máy vật lý mới khi được bảo hành.
 
-Các tiến trình tắt 1 cách chuẩn chỉnh khi chúng nhận được 1 tín hiệu SIGTERM từ trình quản lý tiến trình. Với 1 tiến trình web, tắt 1 cách thanh nhã đạt được bằng cách ngừng lắng nghe trên cổng dịch vụ (vì thế từ chối bất cứ yêu cầu mới nào), cho phép bất cứ yêu cầu hiện tại hoàn thành, và sau đó thoạt. Ngụ ý trong mô hình này là các yêu cầu HTTP sẽ ngắn( không nhiều hơn vài giây), hoặc trong trường hợp lâu, máy khách nên ngay lập tức thử kết nối lại khi kết nối bị mất.
+Các tiến trình tắt 1 cách chuẩn chỉnh khi chúng nhận được 1 tín hiệu SIGTERM từ trình quản lý tiến trình. Với 1 tiến trình web, tắt 1 cách thanh nhã đạt được bằng cách ngừng lắng nghe trên cổng dịch vụ (vì thế từ chối bất cứ yêu cầu mới nào), cho phép bất cứ yêu cầu hiện tại hoàn thành, và sau đó thoát. Ngụ ý trong mô hình này là các yêu cầu HTTP sẽ ngắn( không nhiều hơn vài giây), hoặc trong trường hợp lâu, máy khách nên ngay lập tức thử kết nối lại khi kết nối bị mất.
 
 Với 1 tiến trình worker, tắt 1 cách chuẩn chỉnh đạt được bằng cách đưa công việc hiện tại về hàng chờ việc. Ví dụ, trên RabbitMQ worker có thể gửi 1 `NACK`; trên Beanstalkd, công việc được đưa về hàng chờ tự động mỗi khi worker ngắt kết nối. Các hệ thống lock-based như Delayed Job cần phải chắc triển khai khóa của chúng trên các bản ghi công việc. Ngụ ý trong mô hình ngày là tất cả các công việc là lặp lại, thứ thường có thể đạt được bằng cách gói các kết quả trong 1 giao dịch, hoặc khiến hoạt động không thay đổi giá trị.
 
-Các tiến trình cũng nên mạnh mẽ trước việc chết  bất thình lình, trong trường hợp bị hỏng ở phần cứng phía dưới. Trong khi đây là điều thường ít xảy ra hơn  so với tắt 1 cách thanh nhã với `SIGTERM`, nó vẫn có thể xảy ra. 1 lời khuyên là sử dụng  nền hàng chờ chắc chắn, như là Beanstalkd, nó sẽ đưa các công việc về hàng chờ khi các máy khách ngắt kết nối hoặc quá hạn. Cung như vậy, 1 ứng dụng theo 12 chuẩn được thiết kế để xử lý nhữngkhông mong muốn, không chuẩn chỉnh. Crash-only design đưa khái niệm này đến kết luận logic của nó.
+Các process cũng cần có tính ổn định trước những sự cố bất ngờ như trong trường hợp lỗi hỏng gây ra do phần cứng bên dưới. Trong khi đây là điều thường ít xảy ra hơn  so với tắt 1 cách thanh nhã với `SIGTERM`, nó vẫn có thể xảy ra. 1 lời khuyên là sử dụng  nền hàng chờ chắc chắn, như là Beanstalkd, nó sẽ đưa các công việc về hàng chờ khi các máy khách ngắt kết nối hoặc quá hạn. Cũng như vậy, 1 ứng dụng theo 12 chuẩn được thiết kế để xử lý những không mong muốn, không chuẩn chỉnh. Crash-only design đưa khái niệm này đến kết luận logic của nó.
 
 
 #### X. Dev/prod parity
-###### Giữ phát triển, dàn dựng và sản xuất giống nhau nhất có thể
+###### Duy trì sự tương đồng giữa giai đoạn development, staging, và production
 
 Trước đây, có 1 khoảng trống đáng kể giữa development ( 1 người phát triển tạo các chỉnh sửa trực tiếp tới các triển khai cục bộ của ứng dụng) vàà production(1 triển khai đang chạy của ứng dụng tiếp cận bởi các người dùng cuối). Những khoảng trống này biểu lộ trong 3 điểm:
 
-- Khoảng trống thời gian: 1 người phát triển có thể làm việc trên code mất vài ngàyày, vài tuần, hay thâm chí vài tháng trước khi đẩy lên production.
-- Khoảng cách về nhân sự: Các người phát triển viết code, các kĩ sư óp triển khai nó.
-- Khoảng cách về công cụ: các người phát triển có thể sử dụng 1 stack như Ngĩn, SQLite, và OS X, trong khi triển khai production sử dụng Apache, MySQL, và Linuxx.
+- Khoảng trống thời gian: 1 người phát triển có thể làm việc trên code mất vài ngày, vài tuần, hay thâm chí vài tháng trước khi đẩy lên production.
+- Khoảng cách về nhân sự: Các người phát triển viết code, các kĩ sư ops triển khai nó.
+- Khoảng cách về công cụ: các người phát triển có thể sử dụng 1 stack như Nginx, SQLite, và OS X, trong khi triển khai production sử dụng Apache, MySQL, và Linux.
 
-Ứng dụng theo 12 chuẩn được thiết kế để triển khai liên tục bằng cách giữ các khoảng cách giữa development và production nhỏ. Nhìn vào 3 cái khoảng trống được mô tả bên trên:
+Ứng dụng theo 12 chuẩn được thiết kế để triển khai liên tục bằng cách giữ các khoảng cách giữa development và production nhỏ.  Hãy cùng xem xét lại 3 yếu tố tạo ra những khoảng cách mà đã được mô tả bên trên:
 
-- Làm khoảng cách thời gian nhỏ: 1 người phát triển có thểể viết code và triển khai nó chỉ vài giờ hay thậm chí vài phút sau đó.
+- Thu hẹp khoảng cách về thời gian: 1 người phát triển có thể viết code và triển khai nó chỉ vài giờ hay thậm chí vài phút sau đó.
 - Làm khoảng cách nhân sự nhỏ lại: những người phát triển viết code liên quan chặt chẽ với việc triển khai nó và theo dõi các hoạt động của nó trong production.
 - Khiến khoảng cách các công cụ nhỏ lại: làm development và production giống nhau nhất có thể.
 
@@ -34,7 +34,7 @@ Tổng kết trong bảng dưới đây:
 | Tác giả code và người triển khai code |  Những người khác nhau |  Người tương tự |  
 | Các môi trường Dev và production |  Khác ngau |  Càng tương tự càng tốt | 
 
-[Các dịch vụ sao lưu][3], như là cơ sở dữ liệu của ứng dụng, hệ thống hàng đợi, hoặc bộ nhớ đệm, là thứ mà bình đằng dev/prod rất quan trọng. Nhiều ngôn ngữ cho phép các thư viện đơn giản hóa truy cập đến các dịch vụ sao lưu, bao gồm _adapters_ đến các loại khác nhau của dịch vụ. 1 số ví dụ được cho trong bảng dưới đây.
+[Các dịch vụ sao lưu][3], như là cơ sở dữ liệu của ứng dụng, hệ thống hàng đợi, hoặc bộ nhớ đệm, là những thành phần rất quan trọng mà ta cần lưu ý khi ta đang xét đến sự tương đồng giữa giai đoạn dev/prod. Nhiều ngôn ngữ cho phép các thư viện đơn giản hóa truy cập đến các dịch vụ sao lưu, bao gồm _adapters_ đến các loại khác nhau của dịch vụ. 1 số ví dụ được cho trong bảng dưới đây.
 
 
 | Loại |  Ngôn ngữ |  Thư viện |  Adapters |  
@@ -43,9 +43,9 @@ Tổng kết trong bảng dưới đây:
 | Queue |  Python/Django |  Celery |  RabbitMQ, Beanstalkd, Redis |  
 | Cache |  Ruby/Rails |  ActiveSupport::Cache |  Memory, filesystem, Memcached | 
 
-Các nhà phát triển đôi khi kêu gọi mạnh mẽ trong việc xử dụng các dịch vụ sao lưu nhẹ trong các môi trường cục bộ của họ, trong khi các dịch vụ sao lưu mạnh mẽ hơn sẽ đượcđược sử dụng trong production. Ví dụ, sử dụng SQLite cục bộ và PostgreSQL trong production; hay bộ nhớ tiến trình cục bộ cho việc caching trong development và Memcaches trong production.
+Các nhà phát triển đôi khi kêu gọi mạnh mẽ trong việc xử dụng các dịch vụ sao lưu nhẹ trong các môi trường cục bộ của họ, trong khi các dịch vụ sao lưu mạnh mẽ hơn sẽ được sử dụng trong production. Ví dụ, sử dụng SQLite cục bộ và PostgreSQL trong production; hay bộ nhớ tiến trình cục bộ cho việc caching trong development và Memcaches trong production.
 
-**Nhà phát triển theo 12-chuẩn luôn chối bỏ những cám dỗ sử dụng các dịch vụ sao lưu khác nhau giữa development và production**, thậm chí khi các adaper về mặt lý thuyết tách biệt với bất kỳ sự khác nhau nào trong các dịch vụ sao lưu. Các sự khác nhau giữa các dịch vụ sao lưu có nghĩa là có 1 sự không tương thích xuất hiện, khiến code chạy là qua các bài test trong development hoặc staging có thể thất bại ở production. Những loại lỗi này gây ra những khó khăn làm cản trở triển khai liên tục. Ảnh hưởng của khó khăn này và  những cản trở  tiếp theo đếntriển khai liên tục là thực sự lớn khi xem xét tổng hợp trên vòng đời của 1 ứng dụng.
+**Nhà phát triển theo 12-chuẩn sẽ không sử dụng các dịch vụ sao lưu khác nhau giữa development và production**, thậm chí khi các adapter về mặt lý thuyết tách biệt với bất kỳ sự khác nhau nào trong các dịch vụ sao lưu. Các sự khác nhau giữa các dịch vụ sao lưu có nghĩa là có 1 sự không tương thích xuất hiện, khiến code chạy là qua các bài test trong development hoặc staging có thể thất bại ở production. Những loại lỗi này gây ra những khó khăn làm cản trở triển khai liên tục. Ảnh hưởng của khó khăn này và  những cản trở  tiếp theo đếntriển khai liên tục là thực sự lớn khi xem xét tổng hợp trên vòng đời của 1 ứng dụng.
 
 Các dịch vụ cục bộ nhẹ ngày này kém thuyết phục hơn trước. Các dịch vụ sao lưu hiện đại như Memcaches, PostgreSQL, và RabbitMQ không khó để cài đặt và chạy nhờ vào các hệ thống quản lý gọi hiện đại, như là [Homebrew][4] và [apt-get][5]. Ngoài ra, các công cụ cung cấp khai báo như [Chef][6] và [Puppet][7] đã được kết hợp với các môi trường máy ảo nhẹ như[Docker][8] và [Vagrant][9] cho phép các người phát triển chạy các môi trường cục bộ gần như tương tự với các môi trường producion. Chi phí cài đặt và sử dụng những hệ thống này là thấp nếu so với những lợi ích của dev/prod parity và triển khai liên tục.
 
@@ -66,7 +66,7 @@ Các luồng sự kiện cho 1 ứng dụng có thể được điều hướng 
 
 - Tìm kiếm các sự kiện cụ thể trong quá khứ.
 - Vẽ độ thị tỉ lệ lớn các khuynh hướng( ví dụ như là số yêu cầu mỗi phút)
-- Kích hoạt cảnh bảo dựa theo dự đoán hướng người dùng ( như là 1 cảnh báo khi số lượng lỗi mỗi phút vượt quá 1 ngưỡng cụ thể).
+- Kích hoạt cảnh báo dựa theo dự đoán hướng người dùng ( như là 1 cảnh báo khi số lượng lỗi mỗi phút vượt quá 1 ngưỡng cụ thể).
 
 #### XII. Các tiến trình Admin
 ###### Chạy các công việc admin/quản lý như là các tiến trình chạy-1-lần
@@ -78,6 +78,6 @@ Hệ thống tiến trình là mảng các tiến trình được sử dụng đ
 
 Những tiến trình admin chạy 1 lần nên được chạy trong 1 môi trường giống nhau như các tiến trình dài hạn thông thường của ứng dụng. Chúng chạy với 1 phát hành, sẽ sử dụng chung codebase và cấu hình như bất cứ tiến trình nào chạy với phát hành đó. Code admin phải tương thích với code ứng dụng để tránh các vấn đề đồng bộ hóa.
 
-Các kĩ thuật tách biệt có cùng phụ thuộc nên được sử dụng trên tất cả các loại tiến trình. Ví dụ, nếu tiến trình web Ruby sử dụng lệnh `bundle exec thin start`, sau dó 1 database migration nên sử dụng `bundle exec rake db:migrate`.Tương tự như vậy, 1 chương trình Python sử dụng Virtualenv nên sử dụng vendored `bin/python` để chạy cả Tornado webserver và bất cứ tiến trình admin `manage.py` nào.
+Các kĩ thuật tách biệt có cùng phụ thuộc nên được sử dụng trên tất cả các loại tiến trình. Ví dụ, nếu tiến trình web Ruby sử dụng lệnh `bundle exec thin start`, sau đó 1 database migration nên sử dụng `bundle exec rake db:migrate`.Tương tự như vậy, 1 chương trình Python sử dụng Virtualenv nên sử dụng vendored `bin/python` để chạy cả Tornado webserver và bất cứ tiến trình admin `manage.py` nào.
 
 12-chuẩn đặc biệt ưa thích ngôn ngữ cung cấp REPL có hộp điều khiển, và những thứ nó dễ dàng để chạy các lệnh 1 lần. Trong triển khai cục bộ, các người phát triển gọi các tiến trình admin chạy 1 lần bằng các lệnh shell trực tiếp trong thư mục kieerm tra cả ứng dụng. Trong 1 triển khai production, các nhà phát triển có thể sử dụng ssh hay cơ chế thực thi các lệnh remote được cung cấp bởi môi trường thực thi của triển khai để chạy 1 tiến trình.
